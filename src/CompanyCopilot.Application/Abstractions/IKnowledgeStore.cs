@@ -10,6 +10,7 @@ public interface IKnowledgeStore
     Task<KnowledgeDocument?> GetDocumentAsync(Guid id, CancellationToken cancellationToken = default);
     Task<KnowledgeDocument?> GetDocumentByHashAsync(string hash, CancellationToken cancellationToken = default);
     Task AddDocumentAsync(KnowledgeDocument document, CancellationToken cancellationToken = default);
+    Task DeleteDocumentAsync(KnowledgeDocument document, CancellationToken cancellationToken = default);
     Task<List<KnowledgeDocument>> GetAllDocumentsAsync(CancellationToken cancellationToken = default);
     Task<List<IngestionJob>> GetRecentIngestionJobsAsync(int take, CancellationToken cancellationToken = default);
     Task<IngestionJob?> GetIngestionJobAsync(Guid id, CancellationToken cancellationToken = default);

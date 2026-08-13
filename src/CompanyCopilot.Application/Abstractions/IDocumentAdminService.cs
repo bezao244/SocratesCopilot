@@ -36,7 +36,7 @@ public sealed record UpdateDocumentRequest(
 
 /// <summary>
 /// Operações administrativas locais: aprovar, arquivar, rejeitar, despublicar,
-/// editar metadados, reindexar e consultar o estado do conhecimento.
+/// excluir, editar metadados, reindexar e consultar o estado do conhecimento.
 /// </summary>
 public interface IDocumentAdminService
 {
@@ -44,6 +44,7 @@ public interface IDocumentAdminService
     Task<IReadOnlyList<IngestionJobDto>> ListJobsAsync(int take = 50, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<AuditEventDto>> ListAuditEventsAsync(int take = 100, CancellationToken cancellationToken = default);
     Task<DocumentAdminDto?> GetDocumentAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<string?> DeleteAsync(Guid documentId, string actor, CancellationToken cancellationToken = default);
     Task<string?> ApproveAsync(Guid documentId, string actor, CancellationToken cancellationToken = default);
     Task<string?> ArchiveAsync(Guid documentId, string actor, CancellationToken cancellationToken = default);
     Task<string?> RejectAsync(Guid documentId, string actor, string? reason, CancellationToken cancellationToken = default);

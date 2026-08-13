@@ -88,6 +88,7 @@
                                 }
                                 <button class="btn btn-small btn-reindex" @onclick="() => ReindexAsync(document.Id)">Reindexar</button>
                                 <button class="btn btn-small btn-edit" @onclick="() => StartEditAsync(document.Id)">Editar</button>
+                                <button class="btn btn-small btn-delete" @onclick="() => ToggleDeleteAsync(document.Id)">Excluir</button>
                             </td>
                         </tr>
                         @if (_rejectingId == document.Id)
@@ -97,6 +98,16 @@
                                     <input class="text-input" placeholder="Motivo da rejeição (opcional)" @bind="_rejectReason" />
                                     <button class="btn btn-small btn-reject" @onclick="() => RejectAsync(document.Id)">Confirmar rejeição</button>
                                     <button class="btn btn-small" @onclick="() => _rejectingId = null">Cancelar</button>
+                                </td>
+                            </tr>
+                        }
+                        @if (_deletingId == document.Id)
+                        {
+                            <tr>
+                                <td colspan="9" class="reject-row">
+                                    <span>Excluir permanentemente este documento?</span>
+                                    <button class="btn btn-small btn-delete" @onclick="() => DeleteAsync(document.Id)">Confirmar exclusão</button>
+                                    <button class="btn btn-small" @onclick="() => _deletingId = null">Cancelar</button>
                                 </td>
                             </tr>
                         }
@@ -205,6 +216,7 @@
     private string? _notice;
     private bool _noticeIsError;
     private Guid? _rejectingId;
+    private Guid? _deletingId;
     private string _rejectReason = string.Empty;
     private Guid? _viewingTextId;
     private AdminDocumentEdit? _editing;
@@ -265,8 +277,39 @@
 
     private void ToggleRejectAsync(Guid id)
     {
+        _deletingId = null;
         _rejectingId = _rejectingId == id ? null : id;
         _rejectReason = string.Empty;
+    }
+
+    private void ToggleDeleteAsync(Guid id)
+    {
+        _rejectingId = null;
+        _rejectReason = string.Empty;
+        _deletingId = _deletingId == id ? null : id;
+    }
+
+    private async Task DeleteAsync(Guid id)
+    {
+        var result = await Admin.SendAsync(HttpMethod.Delete, $"api/v1/admin/documents/{id}");
+        _deletingId = null;
+
+        if (result.Ok)
+        {
+            if (_viewingTextId == id)
+            {
+                _viewingTextId = null;
+            }
+
+            if (_editing?.Id == id)
+            {
+                _editing = null;
+                _editError = null;
+            }
+        }
+
+        await ShowActionResultAsync(result, "Documento excluído.");
+        await LoadAsync();
     }
 
     private async Task RejectAsync(Guid id)

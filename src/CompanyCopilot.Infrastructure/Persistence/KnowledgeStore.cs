@@ -29,6 +29,12 @@ public sealed class KnowledgeStore : IKnowledgeStore
         await _db.KnowledgeDocuments.AddAsync(document, cancellationToken);
     }
 
+    public Task DeleteDocumentAsync(KnowledgeDocument document, CancellationToken cancellationToken = default)
+    {
+        _db.KnowledgeDocuments.Remove(document);
+        return Task.CompletedTask;
+    }
+
     public Task<List<KnowledgeDocument>> GetAllDocumentsAsync(CancellationToken cancellationToken = default) =>
         _db.KnowledgeDocuments
             .Include(d => d.Chunks)

@@ -4,22 +4,28 @@ using CompanyCopilot.Domain.Entities;
 using CompanyCopilot.Domain.Enums;
 using CompanyCopilot.Domain.Rules;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace CompanyCopilot.Application.Admin;
 
 /// <summary>
 /// Ciclo administrativo local de documentos: aprovação, arquivamento, rejeição,
-/// despublicação, edição de metadados e reindexação. A busca pública jamais
+/// despublicação, exclusão, edição de metadados e reindexação. A busca pública jamais
 /// consulta documentos internos, não aprovados ou vencidos.
 /// </summary>
 public sealed class DocumentAdminService : IDocumentAdminService
 {
     private readonly IKnowledgeStore _store;
+    private readonly StorageOptions _storage;
     private readonly ILogger<DocumentAdminService> _logger;
 
-    public DocumentAdminService(IKnowledgeStore store, ILogger<DocumentAdminService> logger)
+    public DocumentAdminService(
+        IKnowledgeStore store,
+        IOptions<StorageOptions> storage,
+        ILogger<DocumentAdminService> logger)
     {
         _store = store;
+        _storage = storage.Value;
         _logger = logger;
     }
 
@@ -57,6 +63,60 @@ public sealed class DocumentAdminService : IDocumentAdminService
     {
         var document = await _store.GetDocumentAsync(id, cancellationToken);
         return document is null ? null : ToDto(document);
+    }
+
+    public async Task<string?> DeleteAsync(Guid documentId, string actor, CancellationToken cancellationToken = default)
+    {
+        var document = await _store.GetDocumentAsync(documentId, cancellationToken);
+        if (document is null)
+        {
+            return "Documento não encontrado.";
+        }
+
+        await _store.DeleteDocumentAsync(document, cancellationToken);
+        await _store.AddAuditEventAsync(new AuditEvent
+        {
+            Type = AuditEventType.DocumentDeleted,
+            DocumentId = document.Id,
+            Actor = actor,
+            Details = $"Excluído '{document.Title}' ({document.OriginalFileName})"
+        }, cancellationToken);
+        await _store.SaveChangesAsync(cancellationToken);
+
+        var storedPath = Path.Combine(_storage.Root, "uploads", document.StoredFileName);
+        if (File.Exists(storedPath))
+        {
+            try
+            {
+                File.Delete(storedPath);
+            }
+            catch (IOException ex)
+            {
+                _logger.LogWarning(
+                    ex,
+                    "Documento {DocumentId} removido do banco, mas houve falha ao excluir o arquivo {StoredPath}",
+                    document.Id,
+                    storedPath);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                _logger.LogWarning(
+                    ex,
+                    "Documento {DocumentId} removido do banco, mas faltou permissão para excluir o arquivo {StoredPath}",
+                    document.Id,
+                    storedPath);
+            }
+        }
+        else
+        {
+            _logger.LogWarning(
+                "Documento {DocumentId} removido do banco, mas o arquivo {StoredPath} não foi encontrado",
+                document.Id,
+                storedPath);
+        }
+
+        _logger.LogInformation("Documento {DocumentId} excluído por {Actor}", documentId, actor);
+        return null;
     }
 
     public async Task<string?> ApproveAsync(Guid documentId, string actor, CancellationToken cancellationToken = default)

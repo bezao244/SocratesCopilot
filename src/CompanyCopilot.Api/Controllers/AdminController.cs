@@ -83,6 +83,14 @@ public sealed class AdminController : ControllerBase
         return error is null ? Ok() : BadRequest(new { error });
     }
 
+    [HttpDelete("documents/{id:guid}")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
+    {
+        var error = await _admin.DeleteAsync(id, Actor, cancellationToken);
+        return error is null ? Ok() : BadRequest(new { error });
+    }
+
     [HttpPost("documents/{id:guid}/approve")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Approve(Guid id, CancellationToken cancellationToken)

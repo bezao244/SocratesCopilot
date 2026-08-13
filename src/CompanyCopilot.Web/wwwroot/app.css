@@ -582,6 +582,7 @@ html, body {
 .btn-unpublish { color: var(--warn); }
 .btn-reindex { color: var(--primary); }
 .btn-edit { color: var(--text-soft); }
+.btn-delete { color: var(--danger); }
 .btn-run { color: var(--primary); }
 
 /* ---------- Admin ---------- */

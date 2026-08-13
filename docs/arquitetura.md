@@ -804,6 +804,7 @@ erDiagram
 | POST | `/api/v1/admin/documents` | antiforgery | upload multipart |
 | GET | `/api/v1/admin/documents` · `/documents/{id}` | antiforgery | DTOs |
 | PATCH | `/api/v1/admin/documents/{id}` | antiforgery | atualiza metadados |
+| DELETE | `/api/v1/admin/documents/{id}` | antiforgery | exclui documento |
 | POST | `/api/v1/admin/documents/{id}/approve\|archive\|reject\|unpublish\|reindex` | antiforgery | mutações |
 | GET | `/api/v1/admin/jobs?take` · `/audit?take` · `/evaluation-cases` | antiforgery | listas |
 | POST | `/api/v1/admin/test-question` · `/evaluation-cases/{id}/run` | antiforgery | teste RAG |

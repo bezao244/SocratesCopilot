@@ -53,7 +53,8 @@ public enum AuditEventType
     DocumentReindexed = 6,
     DocumentUnpublished = 7,
     TestQuestionExecuted = 8,
-    FeedbackReceived = 9
+    FeedbackReceived = 9,
+    DocumentDeleted = 10
 }
 
 public enum FeedbackKind
