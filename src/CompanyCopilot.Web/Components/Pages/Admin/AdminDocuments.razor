@@ -29,7 +29,7 @@
     </section>
 
     <section class="admin-card">
-        <h2>Documentos (@_documents?.Count ?? 0)</h2>
+        <h2>Documentos (@_documents?.Count)</h2>
         <button class="btn btn-secondary" @onclick="LoadAsync">Atualizar</button>
 
         @if (_documents is null)
