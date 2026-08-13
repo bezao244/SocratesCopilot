@@ -1,0 +1,214 @@
+@page "/admin/test"
+@rendermode InteractiveServer
+@inject AdminApiClient Admin
+
+<div class="admin-page">
+    <h1>Administração local — Perguntas de teste</h1>
+    <p class="admin-note">
+        Execute perguntas para validar fontes retornadas e o comportamento do copiloto
+        antes de publicar novos conteúdos.
+    </p>
+
+    <section class="admin-card">
+        <h2>Pergunta livre</h2>
+        <div class="upload-row">
+            <input class="text-input text-input-wide" placeholder="Digite a pergunta de teste..."
+                   maxlength="2000" @bind="_question" @onkeydown="HandleKeyAsync" />
+            <button class="btn btn-primary" disabled="@(_busy || string.IsNullOrWhiteSpace(_question))"
+                    @onclick="RunQuestionAsync">
+                Executar
+            </button>
+        </div>
+        @if (_busy)
+        {
+            <div class="empty">Executando (a geração pode levar alguns segundos)...</div>
+        }
+        @if (_result is not null)
+        {
+            <div class="test-result">
+                <div class="test-outcome">
+                    Desfecho:
+                    <span class="status-badge status-@_result.Outcome.ToLowerInvariant()">@_result.Outcome</span>
+                    @if (!string.IsNullOrEmpty(_result.ErrorMessage))
+                    {
+                        <span class="error-box">@_result.ErrorMessage</span>
+                    }
+                </div>
+                <div class="msg-bubble"><div class="msg-text">@_result.Answer</div></div>
+                @if (_result.Sources is { Count: > 0 })
+                {
+                    <div class="sources">
+                        <div class="sources-title">Fontes retornadas (@_result.Sources.Count)</div>
+                        @foreach (var source in _result.Sources)
+                        {
+                            <details class="source">
+                                <summary>
+                                    <span class="source-title">@source.Title</span>
+                                    <span class="source-meta">v@(source.Version) · @source.Location</span>
+                                </summary>
+                                <div class="source-excerpt">@source.Excerpt</div>
+                            </details>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="form-hint">Nenhuma fonte retornada (resposta recusada ou erro).</div>
+                }
+            </div>
+        }
+    </section>
+
+    <section class="admin-card">
+        <h2>Casos de avaliação (modelo — preencher em docs/avaliacao-rag.md)</h2>
+        <button class="btn btn-secondary" @onclick="LoadCasesAsync">Atualizar</button>
+
+        @if (_cases.Count == 0)
+        {
+            <div class="empty">Nenhum caso cadastrado.</div>
+        }
+        else
+        {
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Pergunta</th>
+                        <th>Categoria</th>
+                        <th>Comportamento esperado</th>
+                        <th>Resultado</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var evaluationCase in _cases)
+                    {
+                        <tr>
+                            <td data-label="Pergunta" class="case-question">@evaluationCase.Question</td>
+                            <td data-label="Categoria">@evaluationCase.Category</td>
+                            <td data-label="Comportamento esperado">@evaluationCase.ExpectedBehavior</td>
+                            <td data-label="Resultado">
+                                <span class="status-badge status-@evaluationCase.Result.ToLowerInvariant()">@evaluationCase.Result</span>
+                            </td>
+                            <td data-label="Ações">
+                                <button class="btn btn-small btn-run" disabled="@(_busy)"
+                                        @onclick="() => RunCaseAsync(evaluationCase.Id)">
+                                    Executar
+                                </button>
+                            </td>
+                        </tr>
+                        @if (!string.IsNullOrEmpty(evaluationCase.ExecutionNotes))
+                        {
+                            <tr>
+                                <td colspan="5" class="execution-notes">@evaluationCase.ExecutionNotes</td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        }
+    </section>
+</div>
+
+@code {
+    private sealed record TestResult(string Outcome, string? ErrorMessage, string Answer, List<ChatSourceDto>? Sources);
+
+    private readonly List<EvaluationCaseDto> _cases = new();
+    private string _question = string.Empty;
+    private bool _busy;
+    private TestResult? _result;
+
+    protected override async Task OnInitializedAsync() => await LoadCasesAsync();
+
+    private async Task LoadCasesAsync()
+    {
+        var loaded = await Admin.GetAsync<List<EvaluationCaseDto>>("api/v1/admin/evaluation-cases");
+        _cases.Clear();
+        if (loaded is not null)
+        {
+            _cases.AddRange(loaded);
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task HandleKeyAsync(Microsoft.AspNetCore.Components.Web.KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await RunQuestionAsync();
+        }
+    }
+
+    private async Task RunQuestionAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_question) || _busy)
+        {
+            return;
+        }
+
+        _busy = true;
+        _result = null;
+        StateHasChanged();
+
+        var result = await Admin.SendAsync(
+            HttpMethod.Post, "api/v1/admin/test-question", new { question = _question });
+
+        _busy = false;
+        StateHasChanged();
+
+        if (!result.Ok)
+        {
+            _result = new TestResult("erro", result.Error, string.Empty, null);
+            return;
+        }
+
+        var answer = ReadString(result, "answer") ?? string.Empty;
+        var outcome = ReadString(result, "outcome") ?? "sem resposta";
+        var errorMessage = ReadString(result, "errorMessage");
+        var sources = ReadSources(result);
+
+        _result = new TestResult(outcome, errorMessage, answer, sources);
+    }
+
+    private async Task RunCaseAsync(Guid id)
+    {
+        _busy = true;
+        StateHasChanged();
+
+        var result = await Admin.SendAsync(
+            HttpMethod.Post, $"api/v1/admin/evaluation-cases/{id}/run");
+
+        _busy = false;
+        await LoadCasesAsync();
+    }
+
+    private static string? ReadString(ApiResult result, string property)
+    {
+        if (result.TryGetPayloadProperty(property, out var element) && element.ValueKind == JsonValueKind.String)
+        {
+            return element.GetString();
+        }
+
+        return null;
+    }
+
+    private static List<ChatSourceDto>? ReadSources(ApiResult result)
+    {
+        if (!result.TryGetPayloadProperty("sources", out var element) || element.ValueKind != JsonValueKind.Array)
+        {
+            return null;
+        }
+
+        var sources = new List<ChatSourceDto>();
+        foreach (var item in element.EnumerateArray())
+        {
+            var source = item.Deserialize<ChatSourceDto>();
+            if (source is not null)
+            {
+                sources.Add(source);
+            }
+        }
+
+        return sources;
+    }
+}

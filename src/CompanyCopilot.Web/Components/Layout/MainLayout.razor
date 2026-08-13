@@ -1,0 +1,29 @@
+﻿@inherits LayoutComponentBase
+
+<div class="layout-shell">
+    <header class="topbar">
+        <div class="topbar-inner">
+            <a class="brand" href="/" aria-label="Copiloto da Empresa - página inicial">
+                <img class="brand-logo" src="@Assets["images/logo.svg"]" alt="Copiloto da Empresa" />
+            </a>
+            <nav class="topnav">
+                <a href="/" class="nav-link">Chat</a>
+                <a href="/admin" class="nav-link nav-link-admin" title="Apenas em loopback">Admin local</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="layout-body">
+        @Body
+    </main>
+
+    <footer class="footer">
+        <span>Respostas baseadas exclusivamente em conteúdo público aprovado.</span>
+    </footer>
+</div>
+
+<div id="blazor-error-ui" data-nosnippet>
+    Ocorreu um erro inesperado.
+    <a href="." class="reload">Recarregar</a>
+    <span class="dismiss">✕</span>
+</div>

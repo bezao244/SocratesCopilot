@@ -1,0 +1,383 @@
+@page "/admin"
+@rendermode InteractiveServer
+@inject AdminApiClient Admin
+
+<div class="admin-page">
+    <h1>Administração local — Documentos</h1>
+    <p class="admin-note">
+        Acesso restrito a loopback. Importe, revise, aprove e versionar documentos públicos;
+        o conhecimento é atualizado pela ingestão, nunca por retreino.
+    </p>
+
+    <section class="admin-card">
+        <h2>Importar documento</h2>
+        <div class="upload-row">
+            <InputFile OnChange="HandleFileAsync" accept=".pdf,.docx,.xlsx,.txt,.md,.html,.htm" />
+            <input class="text-input" placeholder="Título (opcional)" @bind="_title" />
+            <button class="btn btn-primary" disabled="@(_busy || _selectedFile is null)" @onclick="UploadAsync">
+                Importar
+            </button>
+        </div>
+        <span class="form-hint">
+            Formatos aceitos: PDF (com texto), DOCX, XLSX, TXT, Markdown, HTML. Máximo 10 MB.
+            PDF digitalizado (sem texto) é rejeitado — OCR não está disponível nesta versão.
+        </span>
+        @if (!string.IsNullOrEmpty(_notice))
+        {
+            <div class="@(_noticeIsError ? "error-box" : "notice-box")">@_notice</div>
+        }
+    </section>
+
+    <section class="admin-card">
+        <h2>Documentos (@_documents?.Count ?? 0)</h2>
+        <button class="btn btn-secondary" @onclick="LoadAsync">Atualizar</button>
+
+        @if (_documents is null)
+        {
+            <div class="empty">Carregando...</div>
+        }
+        else if (_documents.Count == 0)
+        {
+            <div class="empty">Nenhum documento importado ainda.</div>
+        }
+        else
+        {
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Título</th>
+                        <th>Versão</th>
+                        <th>Categoria</th>
+                        <th>Prioridade</th>
+                        <th>Visibilidade</th>
+                        <th>Status</th>
+                        <th>Vigência</th>
+                        <th>Trechos</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var document in _documents)
+                    {
+                        <tr>
+                            <td data-label="Título">
+                                <div class="doc-title">@document.Title</div>
+                                <div class="doc-meta">@document.OriginalFileName</div>
+                                <button class="link-btn" @onclick="() => ToggleTextAsync(document.Id)">texto extraído</button>
+                            </td>
+                            <td data-label="Versão">@document.Version</td>
+                            <td data-label="Categoria">@document.Category</td>
+                            <td data-label="Prioridade">@document.Priority</td>
+                            <td data-label="Visibilidade">@document.Visibility</td>
+                            <td data-label="Status"><span class="status-badge status-@document.Status.ToLowerInvariant()">@document.Status</span></td>
+                            <td data-label="Vigência">@FormatValidity(document.ValidFrom, document.ValidUntil)</td>
+                            <td data-label="Trechos">@document.ChunkCount</td>
+                            <td data-label="Ações" class="actions-cell">
+                                @if (document.Status is "Draft" or "Processing" or "Rejected")
+                                {
+                                    <button class="btn btn-small btn-approve" @onclick="() => ApproveAsync(document.Id)">Aprovar</button>
+                                }
+                                @if (document.Status is "Draft" or "Processing" or "Archived")
+                                {
+                                    <button class="btn btn-small btn-reject" @onclick="() => ToggleRejectAsync(document.Id)">Rejeitar</button>
+                                }
+                                @if (document.Status == "Approved")
+                                {
+                                    <button class="btn btn-small btn-archive" @onclick="() => ArchiveAsync(document.Id)">Arquivar</button>
+                                    <button class="btn btn-small btn-unpublish" @onclick="() => UnpublishAsync(document.Id)">Despublicar</button>
+                                }
+                                <button class="btn btn-small btn-reindex" @onclick="() => ReindexAsync(document.Id)">Reindexar</button>
+                                <button class="btn btn-small btn-edit" @onclick="() => StartEditAsync(document.Id)">Editar</button>
+                            </td>
+                        </tr>
+                        @if (_rejectingId == document.Id)
+                        {
+                            <tr>
+                                <td colspan="9" class="reject-row">
+                                    <input class="text-input" placeholder="Motivo da rejeição (opcional)" @bind="_rejectReason" />
+                                    <button class="btn btn-small btn-reject" @onclick="() => RejectAsync(document.Id)">Confirmar rejeição</button>
+                                    <button class="btn btn-small" @onclick="() => _rejectingId = null">Cancelar</button>
+                                </td>
+                            </tr>
+                        }
+                        @if (_viewingTextId == document.Id)
+                        {
+                            <tr>
+                                <td colspan="9" class="text-row">
+                                    <pre class="extracted-text">@(document.ExtractedText ?? "(sem texto extraído)")</pre>
+                                    @if (!string.IsNullOrEmpty(document.FailureMessage))
+                                    {
+                                        <div class="error-box">@document.FailureMessage</div>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        }
+    </section>
+
+    @if (_editing is not null)
+    {
+        <div class="admin-card">
+            <h2>Editar metadados — @_editing.Title</h2>
+            <div class="edit-grid">
+                <label>Título
+                    <input class="text-input" @bind="_editing.Title" />
+                </label>
+                <label>Versão
+                    <input class="text-input" @bind="_editing.Version" />
+                </label>
+                <label>Categoria
+                    <select class="text-input" @bind="_editing.Category">
+                        @foreach (var category in _categories)
+                        {
+                            <option value="@category">@category</option>
+                        }
+                    </select>
+                </label>
+                <label>Prioridade
+                    <select class="text-input" @bind="_editing.Priority">
+                        @foreach (var priority in _priorities)
+                        {
+                            <option value="@priority">@priority</option>
+                        }
+                    </select>
+                </label>
+                <label>Visibilidade
+                    <select class="text-input" @bind="_editing.Visibility">
+                        @foreach (var visibility in _visibilities)
+                        {
+                            <option value="@visibility">@visibility</option>
+                        }
+                    </select>
+                </label>
+                <label>Fonte
+                    <input class="text-input" @bind="_editing.Source" />
+                </label>
+                <label>Responsável
+                    <input class="text-input" @bind="_editing.Responsible" />
+                </label>
+                <label>Início da vigência
+                    <input class="text-input" placeholder="AAAA-MM-DD" @bind="_editing.ValidFrom" />
+                </label>
+                <label>Fim da vigência
+                    <input class="text-input" placeholder="AAAA-MM-DD" @bind="_editing.ValidUntil" />
+                </label>
+            </div>
+            @if (!string.IsNullOrEmpty(_editError))
+            {
+                <div class="error-box">@_editError</div>
+            }
+            <div class="edit-actions">
+                <button class="btn btn-primary" disabled="@(_busy)" @onclick="SaveEditAsync">Salvar</button>
+                <button class="btn btn-secondary" @onclick="CancelEditAsync">Cancelar</button>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private sealed class AdminDocumentEdit
+    {
+        public Guid Id { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public string Version { get; set; } = "1.0";
+        public string Category { get; set; } = "Other";
+        public string Priority { get; set; } = "Standard";
+        public string Visibility { get; set; } = "Public";
+        public string Source { get; set; } = string.Empty;
+        public string Responsible { get; set; } = string.Empty;
+        public string? ValidFrom { get; set; }
+        public string? ValidUntil { get; set; }
+    }
+
+    private readonly List<string> _categories =
+        new() { "Institutional", "Faq", "Rules", "PaymentConditions", "Hours", "Policy", "Other" };
+    private readonly List<string> _priorities = new() { "Informational", "Standard", "Authoritative" };
+    private readonly List<string> _visibilities = new() { "Public", "Internal" };
+
+    private List<DocumentAdminDto>? _documents;
+    private IBrowserFile? _selectedFile;
+    private string _title = string.Empty;
+    private bool _busy;
+    private string? _notice;
+    private bool _noticeIsError;
+    private Guid? _rejectingId;
+    private string _rejectReason = string.Empty;
+    private Guid? _viewingTextId;
+    private AdminDocumentEdit? _editing;
+    private string? _editError;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _documents = await Admin.GetAsync<List<DocumentAdminDto>>("api/v1/admin/documents");
+        StateHasChanged();
+    }
+
+    private void HandleFileAsync(InputFileChangeEventArgs e)
+    {
+        _selectedFile = e.File;
+        _notice = null;
+    }
+
+    private async Task UploadAsync()
+    {
+        if (_selectedFile is null)
+        {
+            return;
+        }
+
+        _busy = true;
+        _notice = null;
+        StateHasChanged();
+
+        await using var stream = _selectedFile.OpenReadStream(maxAllowedSize: 12 * 1024 * 1024);
+        var result = await Admin.UploadAsync(
+            "api/v1/admin/documents", _selectedFile.Name, stream, string.IsNullOrWhiteSpace(_title) ? null : _title);
+
+        _busy = false;
+        _selectedFile = null;
+        _title = string.Empty;
+        _notice = result.Ok
+            ? "Documento importado e enfileirado para processamento."
+            : result.Error;
+        _noticeIsError = !result.Ok;
+        await LoadAsync();
+    }
+
+    private async Task ApproveAsync(Guid id)
+    {
+        var result = await Admin.SendAsync(HttpMethod.Post, $"api/v1/admin/documents/{id}/approve");
+        await ShowActionResultAsync(result, "Documento aprovado.");
+        await LoadAsync();
+    }
+
+    private async Task ArchiveAsync(Guid id)
+    {
+        var result = await Admin.SendAsync(HttpMethod.Post, $"api/v1/admin/documents/{id}/archive");
+        await ShowActionResultAsync(result, "Documento arquivado.");
+        await LoadAsync();
+    }
+
+    private void ToggleRejectAsync(Guid id)
+    {
+        _rejectingId = _rejectingId == id ? null : id;
+        _rejectReason = string.Empty;
+    }
+
+    private async Task RejectAsync(Guid id)
+    {
+        var result = await Admin.SendAsync(
+            HttpMethod.Post, $"api/v1/admin/documents/{id}/reject",
+            new { reason = string.IsNullOrWhiteSpace(_rejectReason) ? null : _rejectReason });
+        _rejectingId = null;
+        await ShowActionResultAsync(result, "Documento rejeitado.");
+        await LoadAsync();
+    }
+
+    private async Task UnpublishAsync(Guid id)
+    {
+        var result = await Admin.SendAsync(HttpMethod.Post, $"api/v1/admin/documents/{id}/unpublish");
+        await ShowActionResultAsync(result, "Documento despublicado.");
+        await LoadAsync();
+    }
+
+    private async Task ReindexAsync(Guid id)
+    {
+        var result = await Admin.SendAsync(HttpMethod.Post, $"api/v1/admin/documents/{id}/reindex");
+        await ShowActionResultAsync(result, "Reindexação solicitada.");
+        await LoadAsync();
+    }
+
+    private void ToggleTextAsync(Guid id)
+    {
+        _viewingTextId = _viewingTextId == id ? null : id;
+    }
+
+    private void StartEditAsync(Guid id)
+    {
+        var document = _documents?.FirstOrDefault(d => d.Id == id);
+        if (document is null)
+        {
+            return;
+        }
+
+        _editing = new AdminDocumentEdit
+        {
+            Id = document.Id,
+            Title = document.Title,
+            Version = document.Version,
+            Category = document.Category,
+            Priority = document.Priority,
+            Visibility = document.Visibility,
+            Source = document.Source,
+            Responsible = document.Responsible,
+            ValidFrom = document.ValidFrom?.ToString("yyyy-MM-dd"),
+            ValidUntil = document.ValidUntil?.ToString("yyyy-MM-dd")
+        };
+        _editError = null;
+    }
+
+    private void CancelEditAsync()
+    {
+        _editing = null;
+        _editError = null;
+    }
+
+    private async Task SaveEditAsync()
+    {
+        if (_editing is null)
+        {
+            return;
+        }
+
+        _busy = true;
+        StateHasChanged();
+
+        var result = await Admin.SendAsync(HttpMethod.Patch, $"api/v1/admin/documents/{_editing.Id}", new
+        {
+            title = _editing.Title,
+            version = _editing.Version,
+            category = _editing.Category,
+            priority = _editing.Priority,
+            visibility = _editing.Visibility,
+            source = _editing.Source,
+            responsible = _editing.Responsible,
+            validFrom = DateOnly.TryParse(_editing.ValidFrom, out var from) ? from : (DateOnly?)null,
+            validUntil = DateOnly.TryParse(_editing.ValidUntil, out var until) ? until : (DateOnly?)null
+        });
+
+        _busy = false;
+
+        if (result.Ok)
+        {
+            _editing = null;
+            _editError = null;
+            _notice = "Metadados atualizados.";
+            _noticeIsError = false;
+            await LoadAsync();
+        }
+        else
+        {
+            _editError = result.Error;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ShowActionResultAsync(ApiResult result, string successMessage)
+    {
+        _notice = result.Ok ? successMessage : result.Error;
+        _noticeIsError = !result.Ok;
+        StateHasChanged();
+        await Task.CompletedTask;
+    }
+
+    private static string FormatValidity(DateOnly? from, DateOnly? until) =>
+        from is null && until is null
+            ? "sem prazo"
+            : $"{(from?.ToString("dd/MM/yyyy") ?? "?")} → {(until?.ToString("dd/MM/yyyy") ?? "∞")}";
+}

@@ -1,0 +1,17 @@
+{
+  "rodada": 1,
+  "data": "2026-08-07",
+  "metricas": {
+    "Acurácia de desfecho": 0.946,
+    "Acurácia de fontes": 0.143,
+    "Context precision@6": 0.161,
+    "Context recall": 0.964,
+    "Faithfulness": 0.993,
+    "Answer relevancy": 0.889,
+    "Latência de busca (s)": 1.059,
+    "TTFT (s)": 0.584,
+    "Latência total (s)": 1.013,
+    "Throughput geração (tok/s)": 74.6,
+    "Throughput prefill (tok/s)": 14456.0
+  }
+}

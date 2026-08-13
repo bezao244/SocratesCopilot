@@ -1,0 +1,5 @@
+{"run": "warm-up", "geracao_tok_s": 74.4, "prefill_tok_s": 2171.5, "eval_count": 66, "prompt_eval_count": 226, "wall_s": 1.344}
+{"run": "run 1", "geracao_tok_s": 74.7, "prefill_tok_s": 14405.9, "eval_count": 66, "prompt_eval_count": 226, "wall_s": 1.131}
+{"run": "run 2", "geracao_tok_s": 74.5, "prefill_tok_s": 14419.7, "eval_count": 66, "prompt_eval_count": 226, "wall_s": 1.124}
+{"run": "run 3", "geracao_tok_s": 74.5, "prefill_tok_s": 14651.5, "eval_count": 66, "prompt_eval_count": 226, "wall_s": 1.094}
+{"run": "run 4", "geracao_tok_s": 74.7, "prefill_tok_s": 14347.4, "eval_count": 66, "prompt_eval_count": 226, "wall_s": 1.103}

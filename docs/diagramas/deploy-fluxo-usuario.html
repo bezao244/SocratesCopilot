@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Diagrama de Implantação — Fluxo de Uso do Copiloto RAG</title>
+<style>
+  :root { --fit-scale: 1; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: #f2f4f8;
+    color: #222;
+    min-height: 100vh;
+    overflow: hidden;
+  }
+  .viewport {
+    width: 100vw;
+    height: 100vh;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .slide {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 4px 24px rgba(0,0,0,.12);
+    padding: 20px 24px;
+    width: 1280px;
+    transform: scale(var(--fit-scale));
+    transform-origin: center center;
+    will-change: transform;
+  }
+  h1 { font-size: 20px; color: #1a1a2e; margin-bottom: 4px; }
+  .sub { color: #666; font-size: 12px; margin-bottom: 14px; }
+
+  .pipeline {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .node {
+    width: 250px;
+    max-width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    padding: 10px 10px 9px;
+    border-radius: 12px;
+    border: 2px solid #e0e4ec;
+    background: #fafbfd;
+    text-align: center;
+  }
+  .node.node-mini { width: 200px; }
+  .node.node-data { width: 186px; }
+
+  .node .logos {
+    min-height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .node img { height: 38px; object-fit: contain; }
+  .node .nome { font-weight: 600; font-size: 16px; color: #1a1a2e; line-height: 1.15; }
+  .node .det { font-size: 11px; color: #777; line-height: 1.2; }
+  .node .tag {
+    display: inline-block;
+    margin-top: 1px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 9px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: .02em;
+  }
+
+  .n-usuario { border-color: #2563eb; background: #eff4ff; }
+  .n-usuario .tag { background: #2563eb; }
+  .n-usuario .icone {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: #2563eb;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: 700;
+  }
+
+  .n-cloudflare { border-color: #f6821f; background: #fff6ee; }
+  .n-cloudflare .tag { background: #f6821f; }
+  .n-dotnet { border-color: #512bd4; background: #f5f1ff; }
+  .n-dotnet .tag { background: #512bd4; }
+  .n-postgres { border-color: #336791; background: #eef5fa; }
+  .n-postgres .tag { background: #336791; }
+  .n-ollama { border-color: #111; background: #fafafa; }
+  .n-ollama .tag { background: #111; }
+  .n-qwen { border-color: #5b5bd6; background: #f0f0fb; }
+  .n-qwen .tag { background: #5b5bd6; }
+
+  .group {
+    width: 100%;
+    max-width: 930px;
+    border: 2px dashed #d0d8e8;
+    border-radius: 12px;
+    background: #fbfcff;
+    padding: 8px 10px;
+  }
+  .group-title {
+    text-align: center;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    color: #7d8aa1;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    flex-wrap: nowrap;
+  }
+
+  .conn-v {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    margin: 1px 0;
+  }
+  .conn-v .rotulo,
+  .conn-h .rotulo {
+    font-size: 9px;
+    color: #555;
+    text-align: center;
+    background: #fff;
+    border: 1px solid #e3e6ee;
+    border-radius: 6px;
+    padding: 1px 6px;
+    white-space: nowrap;
+  }
+  .conn-v .pro,
+  .conn-h .pro {
+    font-size: 9px;
+    color: #8c95a7;
+    text-align: center;
+    white-space: nowrap;
+  }
+  .conn-backend-data .rotulo {
+    border-color: #336791;
+    color: #2c5b79;
+    font-weight: 700;
+  }
+  .conn-backend-data .pro {
+    color: #5f7690;
+    font-weight: 600;
+  }
+  .seta-v { height: 38px; width: 18px; }
+
+  .conn-h {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+    min-width: 78px;
+  }
+  .seta-h { width: 62px; height: 20px; }
+
+  .cluster {
+    width: 100%;
+    max-width: 930px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    border: 2px dashed #b9c2d4;
+    border-radius: 12px;
+    padding: 8px 10px 10px;
+    background: #fbfcfe;
+  }
+  .cluster .cl-titulo {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    color: #8a93a6;
+    text-transform: uppercase;
+    text-align: center;
+  }
+  .cluster .cl-sub {
+    font-size: 9px;
+    color: #6f819a;
+    text-align: center;
+    margin-top: -3px;
+  }
+
+  .legenda {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px 16px;
+    margin-top: 14px;
+    padding-top: 10px;
+    border-top: 1px solid #e8ebf2;
+    font-size: 11px;
+    color: #666;
+  }
+  .legenda span b { color: #1a1a2e; }
+
+</style>
+</head>
+<body>
+<div class="viewport">
+<div class="slide" id="slide-canvas">
+  <div class="pipeline">
+    <div class="node n-usuario">
+      <div class="icone">U</div>
+      <div class="nome">Usuário</div>
+      <div class="det">Navegador (PC ou celular)</div>
+      <span class="tag">CLIENTE</span>
+    </div>
+
+    <div class="conn-v">
+      <div class="rotulo">HTTPS (DNS)</div>
+      <div class="pro">req / resp</div>
+      <svg class="seta-v" viewBox="0 0 18 38"><path d="M9 5v28" stroke="#9aa3b5" stroke-width="2" fill="none" marker-start="url(#v1)" marker-end="url(#v1)"/><defs><marker id="v1" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><path d="M0 0L8 4L0 8z" fill="#9aa3b5"/></marker></defs></svg>
+    </div>
+
+    <div class="node n-cloudflare">
+      <div class="logos">
+        <img src="./logos/cloudflare-logo-png_seeklogo-332002.png" alt="Cloudflare">
+      </div>
+      <div class="nome">Cloudflare</div>
+      <div class="det">DNS + proxy (acesso externo)</div>
+      <span class="tag">INFRAESTRUTURA</span>
+    </div>
+
+    <div class="conn-v">
+      <div class="rotulo">HTTPS</div>
+      <div class="pro">requisição da página</div>
+      <svg class="seta-v" viewBox="0 0 18 38"><path d="M9 5v28" stroke="#9aa3b5" stroke-width="2" fill="none" marker-start="url(#v2)" marker-end="url(#v2)"/><defs><marker id="v2" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><path d="M0 0L8 4L0 8z" fill="#9aa3b5"/></marker></defs></svg>
+    </div>
+
+    <div class="group">
+      <div class="group-title">Camada de aplicação (.NET)</div>
+      <div class="row">
+        <div class="node node-mini n-dotnet">
+          <div class="logos">
+            <img src="./logos/Blazor.png" alt="Blazor">
+            <img src="./logos/Microsoft_.NET_logo.png" alt=".NET" style="height:30px">
+          </div>
+          <div class="nome">Web Blazor</div>
+          <div class="det">127.0.0.1:8080</div>
+          <span class="tag">APRESENTAÇÃO</span>
+        </div>
+
+        <div class="conn-h">
+          <div class="rotulo">HTTP JSON/NDJSON</div>
+          <div class="pro">REST + SignalR</div>
+          <svg class="seta-h" viewBox="0 0 62 20"><path d="M6 10h50" stroke="#9aa3b5" stroke-width="2" fill="none" marker-start="url(#h1)" marker-end="url(#h1)"/><defs><marker id="h1" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><path d="M0 0L8 4L0 8z" fill="#9aa3b5"/></marker></defs></svg>
+        </div>
+
+        <div class="node node-mini n-dotnet">
+          <div class="logos">
+            <img src="./logos/Microsoft_.NET_logo.png" alt=".NET">
+          </div>
+          <div class="nome">API ASP.NET Core</div>
+          <div class="det">127.0.0.1:5081</div>
+          <span class="tag">BACKEND</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="conn-v conn-backend-data">
+      <div class="rotulo">API ↔ camada de dados e IA</div>
+      <div class="pro">SQL + /api/chat (RAG)</div>
+      <svg class="seta-v" viewBox="0 0 18 38"><path d="M9 5v28" stroke="#9aa3b5" stroke-width="2" fill="none" marker-start="url(#v3)" marker-end="url(#v3)"/><defs><marker id="v3" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><path d="M0 0L8 4L0 8z" fill="#9aa3b5"/></marker></defs></svg>
+    </div>
+
+    <div class="cluster">
+      <div class="cl-titulo">Camada de dados &amp; IA (100% local)</div>
+      <div class="cl-sub">API consulta PostgreSQL + pgvector, monta contexto e envia para inferência no Ollama</div>
+
+      <div class="row">
+        <div class="node node-data n-postgres">
+          <div class="logos">
+            <img src="./logos/postgresql-logo-png_seeklogo-320016.png" alt="PostgreSQL">
+            <img src="./logos/docker-icon-logo-png_seeklogo-643955.png" alt="Docker" style="height:30px">
+          </div>
+          <div class="nome">PostgreSQL 17 + pgvector</div>
+          <div class="det">Docker · 5432</div>
+          <span class="tag">DADOS</span>
+        </div>
+
+        <div class="conn-h">
+          <div class="rotulo">contexto recuperado</div>
+          <div class="pro">usado no prompt</div>
+          <svg class="seta-h" viewBox="0 0 62 20"><path d="M6 10h50" stroke="#9aa3b5" stroke-width="2" fill="none" marker-start="url(#h2)" marker-end="url(#h2)"/><defs><marker id="h2" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><path d="M0 0L8 4L0 8z" fill="#9aa3b5"/></marker></defs></svg>
+        </div>
+
+        <div class="node node-data n-ollama">
+          <div class="logos">
+            <img src="./logos/ollama-logo-png_seeklogo-593420.png" alt="Ollama">
+          </div>
+          <div class="nome">Ollama</div>
+          <div class="det">127.0.0.1:11434</div>
+          <span class="tag">IA LOCAL</span>
+        </div>
+
+        <div class="conn-h">
+          <div class="rotulo">modelo carregado</div>
+          <svg class="seta-h" viewBox="0 0 62 20"><path d="M6 10h50" stroke="#9aa3b5" stroke-width="2" fill="none" marker-start="url(#h3)" marker-end="url(#h3)"/><defs><marker id="h3" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><path d="M0 0L8 4L0 8z" fill="#9aa3b5"/></marker></defs></svg>
+        </div>
+
+        <div class="node node-data n-qwen">
+          <div class="logos">
+            <img src="./logos/qwen-icon-logo-png_seeklogo-611724.png" alt="Qwen">
+          </div>
+          <div class="nome">Qwen3 8B + embeddinggemma</div>
+          <div class="det">empresa-copiloto:v1 · 8 GB VRAM</div>
+          <span class="tag">MODELO</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+<script>
+  (function () {
+    var margin = 16;
+    var slide = document.getElementById("slide-canvas");
+
+    function fitSlide() {
+      if (!slide) {
+        return;
+      }
+
+      document.documentElement.style.setProperty("--fit-scale", "1");
+
+      var baseWidth = slide.offsetWidth;
+      var baseHeight = slide.offsetHeight;
+      var scaleX = (window.innerWidth - margin) / baseWidth;
+      var scaleY = (window.innerHeight - margin) / baseHeight;
+      var scale = Math.min(scaleX, scaleY);
+
+      if (!isFinite(scale) || scale <= 0) {
+        scale = 1;
+      }
+
+      if (scale > 1) {
+        scale = 1;
+      }
+
+      document.documentElement.style.setProperty("--fit-scale", String(scale));
+    }
+
+    window.addEventListener("resize", fitSlide);
+    fitSlide();
+  })();
+</script>
+</body>
+</html>

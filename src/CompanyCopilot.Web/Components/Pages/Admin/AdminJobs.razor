@@ -1,0 +1,97 @@
+@page "/admin/jobs"
+@rendermode InteractiveServer
+@inject AdminApiClient Admin
+@implements IDisposable
+
+<div class="admin-page">
+    <h1>Administração local — Fila de ingestão</h1>
+    <p class="admin-note">
+        Processamento serial de documentos: extração, fragmentação (~500 tokens,
+        sobreposição de 80) e embeddings. Os embeddings pausam automaticamente
+        enquanto houver geração de chat ativa para não disputar VRAM.
+    </p>
+
+    <section class="admin-card">
+        <h2>Jobs (@(_jobs?.Count ?? 0))</h2>
+        <button class="btn btn-secondary" @onclick="LoadAsync">Atualizar</button>
+        <span class="form-hint">Atualização automática a cada 5 segundos.</span>
+
+        @if (_jobs is null)
+        {
+            <div class="empty">Carregando...</div>
+        }
+        else if (_jobs.Count == 0)
+        {
+            <div class="empty">Nenhum job registrado.</div>
+        }
+        else
+        {
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Documento</th>
+                        <th>Status</th>
+                        <th>Progresso</th>
+                        <th>Início</th>
+                        <th>Fim</th>
+                        <th>Trechos</th>
+                        <th>Falhas</th>
+                        <th>Mensagens</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var job in _jobs)
+                    {
+                        <tr>
+                            <td data-label="Documento">
+                                <div class="doc-title">@job.DocumentTitle</div>
+                                <div class="doc-meta">@job.Id</div>
+                            </td>
+                            <td data-label="Status"><span class="status-badge status-@job.Status.ToLowerInvariant()">@job.Status</span></td>
+                            <td data-label="Progresso">
+                                <div class="progress-wrap">
+                                    <div class="progress-bar" style="width: @(job.ProgressPercent)%;"></div>
+                                </div>
+                                @job.ProgressPercent%
+                            </td>
+                            <td data-label="Início">@job.StartedAtUtc?.ToString("HH:mm:ss")</td>
+                            <td data-label="Fim">@job.FinishedAtUtc?.ToString("HH:mm:ss")</td>
+                            <td data-label="Trechos">@job.ChunkCount</td>
+                            <td data-label="Falhas">@job.FailureCount</td>
+                            <td data-label="Mensagens">
+                                <ul class="job-messages">
+                                    @foreach (var message in job.Messages)
+                                    {
+                                        <li>@message</li>
+                                    }
+                                </ul>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </section>
+</div>
+
+@code {
+    private List<IngestionJobDto>? _jobs;
+    private Timer? _timer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+        _timer = new Timer(_ => _ = LoadAsync(), null, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5));
+    }
+
+    private async Task LoadAsync()
+    {
+        _jobs = await Admin.GetAsync<List<IngestionJobDto>>("api/v1/admin/jobs?take=50");
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        _timer?.Dispose();
+    }
+}

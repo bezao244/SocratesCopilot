@@ -1,0 +1,89 @@
+@startuml
+title Diagrama de Implantacao - Fluxo de Uso do Copiloto RAG
+left to right direction
+
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName Segoe UI
+skinparam dpi 180
+skinparam linetype ortho
+skinparam ArrowColor #9AA3B5
+skinparam ArrowThickness 2
+
+skinparam package {
+  BackgroundColor #F8FAFD
+  BorderColor #CBD4E4
+  BorderThickness 2
+  RoundCorner 14
+  FontColor #46516A
+}
+
+skinparam rectangle {
+  RoundCorner 12
+  BorderThickness 2
+  FontColor #1A1A2E
+}
+
+skinparam rectangle<<cliente>> {
+  BackgroundColor #EFF4FF
+  BorderColor #2563EB
+}
+
+skinparam rectangle<<infra>> {
+  BackgroundColor #FFF6EE
+  BorderColor #F6821F
+}
+
+skinparam rectangle<<dotnet>> {
+  BackgroundColor #F5F1FF
+  BorderColor #512BD4
+}
+
+skinparam rectangle<<dados>> {
+  BackgroundColor #EEF5FA
+  BorderColor #336791
+}
+
+skinparam rectangle<<ia>> {
+  BackgroundColor #FAFAFA
+  BorderColor #111111
+}
+
+skinparam rectangle<<modelo>> {
+  BackgroundColor #F0F0FB
+  BorderColor #615CED
+}
+
+rectangle "Usuario\nNavegador (PC ou celular)\n<color:#2563EB><b>CLIENTE</b></color>" as U <<cliente>>
+rectangle "Cloudflare\nDNS + proxy (acesso externo)\n<color:#F6821F><b>INFRAESTRUTURA</b></color>" as CF <<infra>>
+
+package "Maquina local (Windows 11 - i5-14600K - RTX 5060 8 GB)" as HOST {
+  rectangle "Web Blazor Server\n.NET 10 - 127.0.0.1:8080\n<color:#512BD4><b>APRESENTACAO</b></color>" as W <<dotnet>>
+  rectangle "API ASP.NET Core\n.NET 10 - 127.0.0.1:5081\n<color:#512BD4><b>BACKEND</b></color>" as A <<dotnet>>
+
+  package "Dados e IA local (100% local)" as LOCAL {
+    rectangle "PostgreSQL 17 + pgvector\nDocker container - 5432\n<color:#336791><b>DADOS</b></color>" as P <<dados>>
+    rectangle "Ollama\n127.0.0.1:11434\n<color:#111111><b>IA LOCAL</b></color>" as O <<ia>>
+    rectangle "Qwen3 8B + embeddinggemma\nempresa-copiloto:v1 - 8 GB VRAM\n<color:#615CED><b>MODELO</b></color>" as Q <<modelo>>
+  }
+}
+
+U -[hidden]-> CF
+CF -[hidden]-> W
+W -[hidden]-> A
+A -[hidden]-> P
+P -[hidden]-> O
+O -[hidden]-> Q
+
+U <--> CF : HTTPS (DNS)\nreq / resp
+CF <--> W : HTTPS\nrequisicao da pagina
+W <--> A : HTTP JSON/NDJSON\nREST + SignalR
+A <--> P : SQL + busca vetorial\nRAG: recuperacao de contexto
+A <--> O : REST /api/chat\nNDJSON streaming
+O -- Q : modelo carregado
+
+note bottom of HOST
+Privacidade: dados e inferencia permanecem na maquina local.
+end note
+
+@enduml

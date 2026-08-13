@@ -1,0 +1,425 @@
+@page "/"
+@rendermode InteractiveServer
+@inject ChatApiClient _chatApi
+@inject ChatSessionService Session
+@inject IJSRuntime JS
+
+<div class="chat-layout">
+    <div class="sidebar-backdrop @(_showSessions ? "visible" : null)" @onclick="CloseSidebar"></div>
+    <aside class="chat-sidebar@(_showSessions ? " open" : null)">
+        <button class="new-chat-btn" @onclick="StartNewChatAsync">
+            <span class="new-chat-icon">+</span> Novo chat
+        </button>
+
+        <div class="session-list">
+            @if (_sessions.Count == 0)
+            {
+                <div class="session-list-empty">Nenhuma conversa ainda.</div>
+            }
+            @foreach (var session in _sessions)
+            {
+                <div class="session-item @(_activeSessionId == session.Id ? "active" : "")"
+                     @onclick="() => OpenSessionAsync(session.Id)">
+                    <span class="session-title">@session.Title</span>
+                    <span class="session-meta">@FormatRelative(session.UpdatedAtUtc)</span>
+                    <button class="session-delete" title="Excluir conversa"
+                            @onclick="() => DeleteSessionAsync(session.Id)" @onclick:stopPropagation="true">×</button>
+                </div>
+            }
+        </div>
+    </aside>
+
+    <div class="chat-main">
+        <div class="chat-mobile-bar">
+            <button class="sidebar-toggle" @onclick="ToggleSidebar">☰ Conversas</button>
+        </div>
+        <div class="chat-page">
+            <div class="chat-banner">
+                Copiloto consultivo da Empresa. As respostas são geradas exclusivamente a partir de
+                conteúdo público aprovado e são somente informativas — nenhuma operação é executada.
+            </div>
+
+            <div class="chat-window" id="chat-window">
+                @if (_messages.Count == 0 && !_isGenerating)
+                {
+                    <div class="chat-empty">
+                        Olá! Pergunte sobre horários de atendimento, condições de pagamento, políticas,
+                        regras e informações institucionais da Empresa.
+                    </div>
+                }
+
+        @foreach (var message in _messages)
+        {
+            <div class="msg @message.RoleClass">
+                <div class="msg-bubble">
+                    @if (message.Role == "assistant")
+                    {
+                        @if (message.IsRefusal)
+                        {
+                            <div class="refusal-box">@message.Text</div>
+                        }
+                        else
+                        {
+                            <div class="msg-text">@message.Text</div>
+                        }
+
+                        @if (message.Sources is { Count: > 0 })
+                        {
+                            <details class="sources-box">
+                                <summary>
+                                    <span class="sources-title">Fontes (@message.Sources.Count)</span>
+                                </summary>
+                                <div class="sources">
+                                    @foreach (var source in message.Sources)
+                                    {
+                                        <details class="source">
+                                            <summary>
+                                                <span class="source-title">@source.Title</span>
+                                                <span class="source-meta">v@(source.Version) · @source.Location</span>
+                                            </summary>
+                                            <div class="source-excerpt">@source.Excerpt</div>
+                                        </details>
+                                    }
+                                </div>
+                            </details>
+                        }
+
+                        @if (message.HasError)
+                        {
+                            <div class="error-box">@message.Text</div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="msg-text">@message.Text</div>
+                    }
+                </div>
+
+                @if (message.Role == "assistant" && !message.IsRefusal && !message.HasError && message.IsComplete)
+                {
+                    <div class="feedback-row">
+                        <span class="feedback-label">Essa resposta foi útil?</span>
+                        <button class="feedback-btn" disabled="@(message.Feedback != null)"
+                                @onclick="() => SubmitFeedbackAsync(message, true)">
+                            👍
+                        </button>
+                        <button class="feedback-btn" disabled="@(message.Feedback != null)"
+                                @onclick="() => SubmitFeedbackAsync(message, false)">
+                            👎
+                        </button>
+                        @if (message.Feedback == true)
+                        {
+                            <span class="feedback-thanks">Obrigado pelo retorno!</span>
+                        }
+                        else if (message.Feedback == false)
+                        {
+                            <span class="feedback-thanks">Obrigado! Seu retorno ajuda a melhorar.</span>
+                        }
+                    </div>
+                }
+            </div>
+        }
+
+        @if (_isGenerating)
+        {
+            <div class="typing-indicator">
+                <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+            </div>
+        }
+    </div>
+
+    <div class="chat-input-area">
+        <div class="chat-input-card">
+            <textarea
+                class="chat-input"
+                maxlength="2000"
+                rows="3"
+                placeholder="Digite sua pergunta sobre a Empresa..."
+                @bind="_input"
+                @bind:event="oninput"
+                @onkeydown="HandleKeyAsync"
+                disabled="@_isGenerating"></textarea>
+            <div class="chat-controls">
+                <span class="char-counter">@_input.Length / 2000</span>
+                <span class="chat-status">
+                    @if (_statusMessage is not null)
+                    {
+                        @_statusMessage
+                    }
+                </span>
+                @if (_isGenerating)
+                {
+                    <button class="btn btn-cancel" @onclick="CancelAsync">Cancelar</button>
+                }
+                else
+                {
+                    <button class="btn btn-send" @onclick="SendAsync" disabled="@(string.IsNullOrWhiteSpace(_input))">
+                        Enviar
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+    </div>
+    </div>
+</div>
+
+@code {
+    private sealed class MessageView
+    {
+        public required string Role { get; init; }
+        public string Text { get; set; } = string.Empty;
+        public List<ChatSourceDto>? Sources { get; set; }
+        public bool IsRefusal { get; set; }
+        public bool HasError { get; set; }
+        public bool? Feedback { get; set; }
+        public bool IsComplete { get; set; }
+
+        public string RoleClass => Role == "user" ? "msg-user" : "msg-assistant";
+    }
+
+    private readonly List<MessageView> _messages = new();
+    private readonly List<ChatSessionSummaryDto> _sessions = new();
+    private string? _activeSessionId;
+    private bool _showSessions;
+    private string _input = string.Empty;
+    private bool _isGenerating;
+    private string? _statusMessage;
+    private CancellationTokenSource? _cts;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshSessionsAsync();
+    }
+
+    private async Task RefreshSessionsAsync()
+    {
+        var sessions = await _chatApi.GetSessionsAsync();
+        _sessions.Clear();
+        _sessions.AddRange(sessions);
+        StateHasChanged();
+    }
+
+    private void ToggleSidebar()
+    {
+        _showSessions = !_showSessions;
+    }
+
+    private void CloseSidebar()
+    {
+        _showSessions = false;
+    }
+
+    private void StartNewChatAsync()
+    {
+        if (_isGenerating)
+        {
+            return;
+        }
+
+        CloseSidebar();
+        _activeSessionId = null;
+        Session.StartNewSession();
+        _messages.Clear();
+        _statusMessage = null;
+        StateHasChanged();
+    }
+
+    private async Task OpenSessionAsync(string sessionId)
+    {
+        if (_isGenerating || _activeSessionId == sessionId && _messages.Count > 0)
+        {
+            return;
+        }
+
+        CloseSidebar();
+        _activeSessionId = sessionId;
+        Session.SetSessionId(sessionId);
+        _messages.Clear();
+        _statusMessage = "Carregando conversa...";
+        StateHasChanged();
+
+        var records = await _chatApi.GetSessionMessagesAsync(sessionId);
+        _statusMessage = null;
+
+        if (records is not null)
+        {
+            foreach (var record in records)
+            {
+                _messages.Add(new MessageView
+                {
+                    Role = record.Role,
+                    Text = record.Content,
+                    IsComplete = true
+                });
+            }
+        }
+
+        StateHasChanged();
+        await ScrollToBottomAsync();
+    }
+
+    private async Task DeleteSessionAsync(string sessionId)
+    {
+        var deleted = await _chatApi.DeleteSessionAsync(sessionId);
+        if (!deleted)
+        {
+            return;
+        }
+
+        CloseSidebar();
+        _sessions.RemoveAll(s => s.Id == sessionId);
+
+        if (_activeSessionId == sessionId)
+        {
+            _activeSessionId = null;
+            Session.StartNewSession();
+            _messages.Clear();
+            _statusMessage = null;
+        }
+
+        StateHasChanged();
+    }
+
+    private static string FormatRelative(DateTimeOffset utc)
+    {
+        var local = utc.ToLocalTime();
+        var now = DateTime.Now;
+        var diff = now - local;
+
+        if (diff.TotalMinutes < 1)
+        {
+            return "agora";
+        }
+
+        if (diff.TotalMinutes < 60)
+        {
+            return $"há {Math.Max(1, (int)diff.TotalMinutes)} min";
+        }
+
+        if (diff.TotalHours < 24 && local.Date == now.Date)
+        {
+            return $"há {Math.Max(1, (int)diff.TotalHours)} h";
+        }
+
+        return local.Date == now.Date.AddDays(-1) ? "ontem" : local.ToString("dd/MM");
+    }
+
+    private async Task HandleKeyAsync(Microsoft.AspNetCore.Components.Web.KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !e.ShiftKey)
+        {
+            await SendAsync();
+        }
+    }
+
+    private async Task SendAsync()
+    {
+        var text = _input.Trim();
+        if (string.IsNullOrWhiteSpace(text) || _isGenerating)
+        {
+            return;
+        }
+
+        _messages.Add(new MessageView { Role = "user", Text = text });
+        var assistant = new MessageView { Role = "assistant" };
+        _messages.Add(assistant);
+
+        _activeSessionId = Session.SessionId;
+        _input = string.Empty;
+        _isGenerating = true;
+        _statusMessage = "Gerando resposta...";
+        _cts = new CancellationTokenSource();
+
+        StateHasChanged();
+        await ScrollToBottomAsync();
+
+        try
+        {
+            await foreach (var chatEvent in _chatApi.StreamAsync(
+                         new ChatRequestDto(Session.SessionId, text), _cts.Token))
+            {
+                switch (chatEvent.Type)
+                {
+                    case "session":
+                        Session.SetSessionId(chatEvent.SessionId!);
+                        break;
+                    case "delta":
+                        assistant.Text += chatEvent.Text;
+                        break;
+                    case "sources":
+                        assistant.Sources = chatEvent.Sources?.ToList();
+                        break;
+                    case "refusal":
+                        assistant.Text = chatEvent.Text ?? string.Empty;
+                        assistant.IsRefusal = true;
+                        break;
+                    case "error":
+                        assistant.Text = chatEvent.Text ?? string.Empty;
+                        assistant.HasError = true;
+                        break;
+                }
+
+                StateHasChanged();
+                await ScrollToBottomAsync();
+            }
+
+            assistant.IsComplete = true;
+            _statusMessage = null;
+        }
+        catch (OperationCanceledException)
+        {
+            assistant.Text += "\n\n(geração cancelada)";
+            assistant.IsComplete = true;
+            _statusMessage = null;
+        }
+        catch (Exception)
+        {
+            assistant.Text = "Não foi possível concluir a resposta. Tente novamente.";
+            assistant.HasError = true;
+            assistant.IsComplete = true;
+            _statusMessage = null;
+        }
+        finally
+        {
+            _isGenerating = false;
+            _cts?.Dispose();
+            _cts = null;
+            await RefreshSessionsAsync();
+            StateHasChanged();
+        }
+    }
+
+    private async Task CancelAsync()
+    {
+        _cts?.Cancel();
+        _statusMessage = "Cancelando...";
+        StateHasChanged();
+        await Task.CompletedTask;
+    }
+
+    private async Task SubmitFeedbackAsync(MessageView message, bool positive)
+    {
+        if (message.Feedback is not null)
+        {
+            return;
+        }
+
+        message.Feedback = positive;
+        await _chatApi.SubmitFeedbackAsync(
+            new FeedbackRequestDto(Session.SessionId, positive ? "positive" : "negative", null));
+        StateHasChanged();
+    }
+
+    private async Task ScrollToBottomAsync()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("chatScrollBottom");
+        }
+        catch (Exception)
+        {
+            // JS indisponível não impede o chat
+        }
+    }
+}

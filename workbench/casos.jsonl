@@ -1,0 +1,40 @@
+{"id": 1, "pergunta": "Qual o horário de atendimento telefônico?", "categoria": "A", "fontes_esperadas": ["horario-atendimento"], "suite": "principal"}
+{"id": 2, "pergunta": "O atendimento presencial funciona aos sábados?", "categoria": "A", "fontes_esperadas": ["horario-atendimento"], "suite": "principal"}
+{"id": 3, "pergunta": "Em feriados, o atendimento telefônico funciona?", "categoria": "A", "fontes_esperadas": ["horario-atendimento"], "suite": "principal"}
+{"id": 4, "pergunta": "Em quanto tempo respondem e-mails?", "categoria": "A", "fontes_esperadas": ["horario-atendimento"], "suite": "principal"}
+{"id": 5, "pergunta": "Quais formas de pagamento são aceitas?", "categoria": "A", "fontes_esperadas": ["condicoes-pagamento"], "suite": "principal"}
+{"id": 6, "pergunta": "Em quantas vezes posso parcelar no cartão?", "categoria": "A", "fontes_esperadas": ["condicoes-pagamento"], "suite": "principal"}
+{"id": 7, "pergunta": "Há juros no parcelamento? Em quais parcelas?", "categoria": "A", "fontes_esperadas": ["condicoes-pagamento"], "suite": "principal"}
+{"id": 8, "pergunta": "Qual o desconto pagando com Pix à vista?", "categoria": "A", "fontes_esperadas": ["condicoes-pagamento"], "suite": "principal"}
+{"id": 9, "pergunta": "O que acontece se eu atrasar o pagamento?", "categoria": "A", "fontes_esperadas": ["condicoes-pagamento"], "suite": "principal"}
+{"id": 10, "pergunta": "Em quanto tempo o reembolso cai na conta?", "categoria": "A", "fontes_esperadas": ["condicoes-pagamento"], "suite": "principal"}
+{"id": 11, "pergunta": "Qual o prazo de troca por defeito?", "categoria": "A", "fontes_esperadas": ["politica-troca"], "suite": "principal"}
+{"id": 12, "pergunta": "Posso devolver uma compra feita pelo site? Em quanto tempo?", "categoria": "A", "fontes_esperadas": ["politica-troca"], "suite": "principal"}
+{"id": 13, "pergunta": "Quais condições para aceitar a troca de um produto?", "categoria": "A", "fontes_esperadas": ["politica-troca"], "suite": "principal"}
+{"id": 14, "pergunta": "Como solicito uma troca?", "categoria": "A", "fontes_esperadas": ["politica-troca"], "suite": "principal"}
+{"id": 15, "pergunta": "Troca-se produto sem nota fiscal?", "categoria": "A", "fontes_esperadas": ["politica-troca", "faq"], "suite": "principal"}
+{"id": 16, "pergunta": "Como crio uma conta no site?", "categoria": "A", "fontes_esperadas": ["faq"], "suite": "principal"}
+{"id": 17, "pergunta": "Esqueci minha senha. Como recuperar?", "categoria": "A", "fontes_esperadas": ["faq"], "suite": "principal"}
+{"id": 18, "pergunta": "Como acompanho meu pedido?", "categoria": "A", "fontes_esperadas": ["faq"], "suite": "principal"}
+{"id": 19, "pergunta": "O envio é gratuito?", "categoria": "A", "fontes_esperadas": ["faq"], "suite": "principal"}
+{"id": 20, "pergunta": "Quanto tempo leva a entrega?", "categoria": "A", "fontes_esperadas": ["faq"], "suite": "principal"}
+{"id": 21, "pergunta": "A Empresa emite nota fiscal?", "categoria": "A", "fontes_esperadas": ["faq"], "suite": "principal"}
+{"id": 22, "pergunta": "Como falo com um atendente humano?", "categoria": "A", "fontes_esperadas": ["faq"], "suite": "principal"}
+{"id": 23, "pergunta": "Qual o propósito da Empresa?", "categoria": "A", "fontes_esperadas": ["institucional"], "suite": "principal"}
+{"id": 24, "pergunta": "Quais são os valores da Empresa?", "categoria": "A", "fontes_esperadas": ["institucional"], "suite": "principal"}
+{"id": 25, "pergunta": "Qual o canal de contato institucional?", "categoria": "A", "fontes_esperadas": ["institucional"], "suite": "principal"}
+{"id": 26, "pergunta": "Qual o horário do atendimento digital?", "categoria": "A", "fontes_esperadas": ["horario-atendimento"], "suite": "principal"}
+{"id": 27, "pergunta": "Quantos dias úteis levam as entregas para capitais?", "categoria": "A", "fontes_esperadas": ["faq"], "suite": "principal"}
+{"id": 28, "pergunta": "Produto personalizado pode ser trocado?", "categoria": "A", "fontes_esperadas": ["politica-troca"], "suite": "principal"}
+{"id": 29, "pergunta": "Qual a multa e juros de atraso?", "categoria": "A", "fontes_esperadas": ["condicoes-pagamento"], "suite": "principal"}
+{"id": 30, "pergunta": "Quais categorias de produto não são aceitas em troca?", "categoria": "A", "fontes_esperadas": ["politica-troca"], "suite": "principal"}
+{"id": 31, "pergunta": "Qual o preço do plano premium?", "categoria": "RNE", "fontes_esperadas": [], "suite": "principal"}
+{"id": 32, "pergunta": "A Empresa atende clientes em outros países?", "categoria": "RNE", "fontes_esperadas": [], "suite": "principal"}
+{"id": 33, "pergunta": "Qual a política de demissão da Empresa?", "categoria": "RNE", "fontes_esperadas": [], "suite": "principal"}
+{"id": 34, "pergunta": "Recomende um investimento lucrativo.", "categoria": "RNE", "fontes_esperadas": [], "suite": "principal"}
+{"id": 35, "pergunta": "Quantos funcionários a Empresa tem?", "categoria": "RNE", "fontes_esperadas": [], "suite": "principal"}
+{"id": 36, "pergunta": "Qual o horário de atendimento telefônico?", "categoria": "RC", "fontes_esperadas": [], "suite": "conflito"}
+{"id": 37, "pergunta": "Qual o prazo de troca por defeito?", "categoria": "RC", "fontes_esperadas": [], "suite": "conflito"}
+{"id": 38, "pergunta": "Qual a taxa de juros do parcelamento?", "categoria": "RC", "fontes_esperadas": [], "suite": "conflito"}
+{"id": 39, "pergunta": "", "categoria": "400", "fontes_esperadas": [], "suite": "robustez"}
+{"id": 40, "pergunta": "(verificação de 429 com configuração padrão — executado separadamente)", "categoria": "429", "fontes_esperadas": [], "suite": "robustez"}
