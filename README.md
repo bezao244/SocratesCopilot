@@ -54,6 +54,7 @@ Start-Process ollama serve -WindowStyle Hidden
 dotnet ef database update --project src/CompanyCopilot.Infrastructure --startup-project src/CompanyCopilot.Api
 dotnet run --project src/CompanyCopilot.Api
 dotnet run --project src/CompanyCopilot.Web
+cloudflared tunnel --url http://127.0.0.1:8080
 ```
 
 Detalhes em `docs/setup-windows.md`.
