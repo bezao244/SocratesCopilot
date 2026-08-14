@@ -1,5 +1,10 @@
-﻿<!DOCTYPE html>
-<html lang="pt-BR">
+﻿@inject VisitorIdProvider VisitorIdProvider
+@{
+    var visitorId = VisitorIdProvider.VisitorId;
+}
+
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme-visitor-id="@visitorId">
 
 <head>
     <meta charset="utf-8" />
@@ -9,6 +14,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="@Assets["favicon-32x32.png"]" />
     <link rel="icon" type="image/png" sizes="192x192" href="@Assets["favicon-192x192.png"]" />
     <link rel="apple-touch-icon" href="@Assets["apple-touch-icon.png"]" />
+    <script src="@Assets["theme.js"]"></script>
     <ResourcePreloader />
     <link rel="stylesheet" href="@Assets["app.css"]" />
     <link rel="stylesheet" href="@Assets["CompanyCopilot.Web.styles.css"]" />

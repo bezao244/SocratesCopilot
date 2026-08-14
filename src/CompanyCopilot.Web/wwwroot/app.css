@@ -1,6 +1,11 @@
 :root {
+    color-scheme: light;
     --bg: #f4f6f8;
     --surface: #ffffff;
+    --surface-muted: #fbfcfd;
+    --sidebar-bg: #f6f8fa;
+    --surface-hover: #eceff3;
+    --surface-active: #e3edf7;
     --border: #dde3e8;
     --text: #1c2733;
     --text-soft: #5c6b7a;
@@ -12,7 +17,88 @@
     --danger: #b3261e;
     --warn: #8a5a00;
     --success: #1e7a3c;
+    --banner-bg: #e8f1fb;
+    --banner-border: #c5d9ee;
+    --banner-text: #094a8f;
+    --danger-soft-bg: #fdecea;
+    --scrollbar-thumb: #d3dbe4;
+    --refusal-bg: #fff7e6;
+    --refusal-border: #f0d9a8;
+    --error-bg: #fdecea;
+    --error-border: #f5c6c2;
+    --notice-bg: #e7f6ec;
+    --notice-border: #bfe6cd;
+    --input-card-bg: #ffffff;
+    --input-card-border: #e0e6ec;
+    --input-card-shadow: 0 6px 28px rgba(16, 36, 56, 0.09);
+    --input-card-focus-shadow: 0 8px 32px rgba(16, 36, 56, 0.1);
+    --focus-ring: rgba(11, 92, 173, 0.12);
+    --input-placeholder: #9aa8b6;
+    --btn-cancel-border: #f0b9b5;
+    --btn-cancel-bg: #fffafa;
+    --status-approved-bg: #e7f6ec;
+    --status-draft-bg: #eef1f4;
+    --status-processing-bg: #e8f1fb;
+    --status-archived-bg: #f2eee9;
+    --status-rejected-bg: #fdecea;
+    --row-reject-bg: #fdf8f2;
+    --row-text-bg: #fbfcfd;
+    --extracted-bg: #f5f7f9;
+    --progress-bg: #eef1f4;
+    --overlay-backdrop: rgba(16, 36, 56, 0.35);
+    --sidebar-shadow: 4px 0 24px rgba(16, 36, 56, 0.18);
     --radius: 12px;
+}
+
+:root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0f141a;
+    --surface: #16202b;
+    --surface-muted: #1b2733;
+    --sidebar-bg: #121c26;
+    --surface-hover: #1f2d3b;
+    --surface-active: #24384c;
+    --border: #2f4256;
+    --text: #e6edf3;
+    --text-soft: #a1b2c3;
+    --primary: #62abff;
+    --primary-dark: #3f90ee;
+    --user-bubble: #3f90ee;
+    --user-text: #f8fbff;
+    --assistant-bubble: #1a2632;
+    --danger: #ff8e93;
+    --warn: #f2ca7a;
+    --success: #70d69a;
+    --banner-bg: #1b2e43;
+    --banner-border: #33506d;
+    --banner-text: #d2e6ff;
+    --danger-soft-bg: #42252a;
+    --scrollbar-thumb: #3a4e63;
+    --refusal-bg: #3b311e;
+    --refusal-border: #7a6430;
+    --error-bg: #42252a;
+    --error-border: #82424a;
+    --notice-bg: #213a2b;
+    --notice-border: #3e6d52;
+    --input-card-bg: #162331;
+    --input-card-border: #355069;
+    --input-card-shadow: 0 6px 28px rgba(0, 0, 0, 0.45);
+    --input-card-focus-shadow: 0 8px 32px rgba(0, 0, 0, 0.55);
+    --focus-ring: rgba(98, 171, 255, 0.22);
+    --input-placeholder: #7f95aa;
+    --btn-cancel-border: #7d4b52;
+    --btn-cancel-bg: #2d1d21;
+    --status-approved-bg: #213a2b;
+    --status-draft-bg: #253543;
+    --status-processing-bg: #1b2e43;
+    --status-archived-bg: #3a3023;
+    --status-rejected-bg: #42252a;
+    --row-reject-bg: #2b2420;
+    --row-text-bg: #1b2733;
+    --extracted-bg: #141f2a;
+    --progress-bg: #253543;
+    --overlay-backdrop: rgba(6, 10, 14, 0.62);
+    --sidebar-shadow: 4px 0 24px rgba(0, 0, 0, 0.45);
 }
 
 * {
@@ -47,6 +133,7 @@ html, body {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 16px;
 }
 
 .brand {
@@ -67,6 +154,40 @@ html, body {
 .topnav {
     display: flex;
     gap: 16px;
+}
+
+.topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.appearance-picker {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text-soft);
+}
+
+.theme-select {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface-muted);
+    color: var(--text);
+    font: inherit;
+    font-size: 13px;
+    padding: 4px 8px;
+    cursor: pointer;
+}
+
+.theme-select:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 1px;
+}
+
+:root[data-theme="dark"] .brand-logo {
+    filter: brightness(0) invert(1);
 }
 
 .nav-link {
@@ -94,6 +215,16 @@ html, body {
     color: var(--text-soft);
 }
 
+#blazor-error-ui {
+    background: var(--surface);
+    color: var(--text);
+    border-top: 1px solid var(--border);
+}
+
+#blazor-error-ui .reload {
+    color: var(--primary);
+}
+
 /* ---------- Chat ---------- */
 
 .chat-layout {
@@ -107,7 +238,7 @@ html, body {
     width: 264px;
     flex-shrink: 0;
     border-right: 1px solid var(--border);
-    background: #f6f8fa;
+    background: var(--sidebar-bg);
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -167,11 +298,11 @@ html, body {
 }
 
 .session-item:hover {
-    background: #eceff3;
+    background: var(--surface-hover);
 }
 
 .session-item.active {
-    background: #e3edf7;
+    background: var(--surface-active);
 }
 
 .session-title {
@@ -215,7 +346,7 @@ html, body {
 }
 
 .session-delete:hover {
-    background: #fdecea;
+    background: var(--danger-soft-bg);
     color: var(--danger);
 }
 
@@ -239,10 +370,10 @@ html, body {
 }
 
 .chat-banner {
-    background: #e8f1fb;
-    border: 1px solid #c5d9ee;
+    background: var(--banner-bg);
+    border: 1px solid var(--banner-border);
     border-radius: var(--radius);
-    color: var(--primary-dark);
+    color: var(--banner-text);
     font-size: 13px;
     padding: 10px 14px;
     margin: 14px 0 10px;
@@ -263,7 +394,7 @@ html, body {
 }
 
 .chat-window::-webkit-scrollbar-thumb {
-    background: #d3dbe4;
+    background: var(--scrollbar-thumb);
     border-radius: 8px;
 }
 
@@ -320,8 +451,8 @@ html, body {
 }
 
 .refusal-box {
-    background: #fff7e6;
-    border: 1px solid #f0d9a8;
+    background: var(--refusal-bg);
+    border: 1px solid var(--refusal-border);
     color: var(--warn);
     border-radius: 18px;
     border-bottom-left-radius: 6px;
@@ -330,8 +461,8 @@ html, body {
 }
 
 .error-box {
-    background: #fdecea;
-    border: 1px solid #f5c6c2;
+    background: var(--error-bg);
+    border: 1px solid var(--error-border);
     color: var(--danger);
     border-radius: 18px;
     border-bottom-left-radius: 6px;
@@ -339,8 +470,8 @@ html, body {
 }
 
 .notice-box {
-    background: #e7f6ec;
-    border: 1px solid #bfe6cd;
+    background: var(--notice-bg);
+    border: 1px solid var(--notice-border);
     color: var(--success);
     border-radius: var(--radius);
     padding: 10px 12px;
@@ -350,7 +481,7 @@ html, body {
     margin-top: 10px;
     border: 1px solid var(--border);
     border-radius: 8px;
-    background: #fbfcfd;
+    background: var(--surface-muted);
 }
 
 .sources-box > summary {
@@ -382,7 +513,7 @@ html, body {
 .source {
     border: 1px solid var(--border);
     border-radius: 8px;
-    background: #fbfcfd;
+    background: var(--surface-muted);
 }
 
 .source summary {
@@ -475,17 +606,17 @@ html, body {
 .chat-input-card {
     max-width: 780px;
     margin: 0 auto;
-    background: #ffffff;
-    border: 1px solid #e0e6ec;
+    background: var(--input-card-bg);
+    border: 1px solid var(--input-card-border);
     border-radius: 18px;
     padding: 10px 12px 10px;
-    box-shadow: 0 6px 28px rgba(16, 36, 56, 0.09);
+    box-shadow: var(--input-card-shadow);
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .chat-input-card:focus-within {
     border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(11, 92, 173, 0.12), 0 8px 32px rgba(16, 36, 56, 0.1);
+    box-shadow: 0 0 0 3px var(--focus-ring), var(--input-card-focus-shadow);
 }
 
 .chat-input {
@@ -502,7 +633,7 @@ html, body {
 }
 
 .chat-input::placeholder {
-    color: #9aa8b6;
+    color: var(--input-placeholder);
 }
 
 .chat-controls {
@@ -527,6 +658,7 @@ html, body {
 .btn {
     border: 1px solid var(--border);
     background: var(--surface);
+    color: var(--text);
     border-radius: 10px;
     padding: 8px 16px;
     font: inherit;
@@ -543,7 +675,7 @@ html, body {
 .btn-send, .btn-primary {
     background: var(--primary);
     border-color: var(--primary);
-    color: #fff;
+    color: var(--user-text);
     font-weight: 600;
     border-radius: 999px;
     padding: 8px 20px;
@@ -562,8 +694,8 @@ html, body {
 
 .btn-cancel {
     color: var(--danger);
-    border-color: #f0b9b5;
-    background: #fffafa;
+    border-color: var(--btn-cancel-border);
+    background: var(--btn-cancel-bg);
 }
 
 .btn-secondary {
@@ -635,7 +767,8 @@ html, body {
     padding: 8px 10px;
     font: inherit;
     font-size: 14px;
-    background: #fbfcfd;
+    color: var(--text);
+    background: var(--surface-muted);
 }
 
 .text-input-wide {
@@ -703,27 +836,27 @@ html, body {
 }
 
 .status-approved, .status-completed, .status-passed {
-    background: #e7f6ec;
+    background: var(--status-approved-bg);
     color: var(--success);
 }
 
 .status-draft, .status-queued, .status-pending {
-    background: #eef1f4;
+    background: var(--status-draft-bg);
     color: var(--text-soft);
 }
 
 .status-processing, .status-running {
-    background: #e8f1fb;
+    background: var(--status-processing-bg);
     color: var(--primary);
 }
 
 .status-archived {
-    background: #f2eee9;
+    background: var(--status-archived-bg);
     color: var(--warn);
 }
 
 .status-rejected, .status-failed, .status-error {
-    background: #fdecea;
+    background: var(--status-rejected-bg);
     color: var(--danger);
 }
 
@@ -734,15 +867,15 @@ html, body {
 }
 
 .reject-row td {
-    background: #fdf8f2;
+    background: var(--row-reject-bg);
 }
 
 .text-row td {
-    background: #fbfcfd;
+    background: var(--row-text-bg);
 }
 
 .extracted-text {
-    background: #f5f7f9;
+    background: var(--extracted-bg);
     border: 1px solid var(--border);
     border-radius: 8px;
     padding: 10px;
@@ -773,7 +906,7 @@ html, body {
 }
 
 .progress-wrap {
-    background: #eef1f4;
+    background: var(--progress-bg);
     border-radius: 8px;
     height: 10px;
     min-width: 90px;
@@ -819,7 +952,7 @@ html, body {
 .execution-notes {
     font-size: 12px;
     color: var(--text-soft);
-    background: #fbfcfd;
+    background: var(--surface-muted);
 }
 
 /* ---------- Responsivo ---------- */
@@ -842,8 +975,11 @@ html, body {
 
     .topbar-inner { padding: 10px 12px; }
     .brand-logo { height: 30px; }
+    .topbar-actions { gap: 10px; }
     .topnav { gap: 12px; }
     .nav-link { font-size: 13px; }
+    .appearance-picker { gap: 6px; font-size: 11px; }
+    .theme-select { font-size: 12px; padding: 4px 6px; }
 
     .footer { padding: 8px 12px; font-size: 11px; }
 
@@ -856,7 +992,7 @@ html, body {
         z-index: 60;
         transform: translateX(-100%);
         transition: transform 0.22s ease;
-        box-shadow: 4px 0 24px rgba(16, 36, 56, 0.18);
+        box-shadow: var(--sidebar-shadow);
     }
 
     .chat-sidebar.open { transform: translateX(0); }
@@ -865,7 +1001,7 @@ html, body {
         display: block;
         position: fixed;
         inset: 0;
-        background: rgba(16, 36, 56, 0.35);
+        background: var(--overlay-backdrop);
         z-index: 55;
         opacity: 0;
         pointer-events: none;
