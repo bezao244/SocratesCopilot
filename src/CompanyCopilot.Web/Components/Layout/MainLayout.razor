@@ -6,10 +6,23 @@
             <a class="brand" href="/" aria-label="Copiloto da Empresa - página inicial">
                 <img class="brand-logo" src="@Assets["images/logo.svg"]" alt="Copiloto da Empresa" />
             </a>
-            <nav class="topnav">
-                <a href="/" class="nav-link">Chat</a>
-                <a href="/admin" class="nav-link nav-link-admin" title="Apenas em loopback">Admin local</a>
-            </nav>
+            <div class="topbar-actions">
+                <nav class="topnav">
+                    <a href="/" class="nav-link">Chat</a>
+                    <a href="/admin" class="nav-link nav-link-admin" title="Apenas em loopback">Admin local</a>
+                </nav>
+                <label class="appearance-picker" for="theme-select">
+                    Aparência
+                    <select id="theme-select"
+                            class="theme-select"
+                            data-theme-select
+                            aria-label="Selecionar aparência"
+                            onchange="window.themePreference && window.themePreference.setTheme(this.value)">
+                        <option value="light">☀️ Modo claro</option>
+                        <option value="dark">🌙 Modo escuro</option>
+                    </select>
+                </label>
+            </div>
         </div>
     </header>
 
