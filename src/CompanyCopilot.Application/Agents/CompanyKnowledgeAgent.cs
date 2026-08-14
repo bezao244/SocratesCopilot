@@ -186,16 +186,24 @@ public sealed class CompanyKnowledgeAgent : ICompanyKnowledgeAgent
                 return;
             }
 
-            var sources = evidence.SelectedHits
-                .Select(h => new ChatSourceDto(
-                    h.DocumentId,
-                    h.Title,
-                    h.Version,
-                    h.Location,
-                    h.Excerpt.Length > 240 ? h.Excerpt[..240] + "…" : h.Excerpt))
-                .ToList();
+            var sourceHits = SourceCitationSelector.SelectRelevant(
+                request.Message, evidence.SelectedHits, _options.MaxRetrievedChunks);
 
-            await writer.WriteAsync(new ChatEvent(ChatEventType.Sources, sessionId, Sources: sources), cancellationToken);
+            if (sourceHits.Count > 0)
+            {
+                var sources = sourceHits
+                    .Select(h => new ChatSourceDto(
+                        h.DocumentId,
+                        h.Title,
+                        h.Version,
+                        h.Location,
+                        h.Excerpt.Length > 240 ? h.Excerpt[..240] + "…" : h.Excerpt))
+                    .ToList();
+
+                await writer.WriteAsync(
+                    new ChatEvent(ChatEventType.Sources, sessionId, Sources: sources),
+                    cancellationToken);
+            }
 
             if (fullAnswer.Length > 0)
             {

@@ -226,6 +226,76 @@ public sealed class ChatEndpointTests : IClassFixture<ChatApiFactory>
     }
 
     [Fact]
+    public async Task Chat_SaudacaoSemCorrespondencia_NaoEmiteFontes()
+    {
+        ResetFactory();
+        _factory.StreamStep = _ => "Boa noite.";
+        _factory.Hits = new[]
+        {
+            new SearchHit(
+                Guid.NewGuid(),
+                "Politica de Troca",
+                "1.0",
+                "politica-troca.md#4",
+                "Trocas por defeito podem ser solicitadas em ate 30 dias.",
+                0.95,
+                DocumentPriority.Authoritative,
+                DocumentCategory.Policy)
+        };
+
+        var response = await _factory.CreateClient().SendAsync(ChatRequest("boa noite"));
+        var events = await ReadEventsAsync(response);
+        var types = events.Select(e => e.GetProperty("type").GetString()).ToList();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("delta", types);
+        Assert.DoesNotContain("sources", types);
+        Assert.Equal("done", types[^1]);
+    }
+
+    [Fact]
+    public async Task Chat_ComMultiplasFontes_OrdenaPorCorrespondencia()
+    {
+        ResetFactory();
+        var bestMatchId = Guid.NewGuid();
+        var secondaryMatchId = Guid.NewGuid();
+        _factory.Hits = new[]
+        {
+            new SearchHit(
+                secondaryMatchId,
+                "Canal de Atendimento",
+                "1.0",
+                "atendimento.md#2",
+                "Nosso atendimento responde em ate 2 dias uteis.",
+                0.99,
+                DocumentPriority.Standard,
+                DocumentCategory.Faq),
+            new SearchHit(
+                bestMatchId,
+                "Horario de Atendimento Telefonico",
+                "1.0",
+                "horario-atendimento.md#3",
+                "O atendimento telefonico funciona de segunda a sexta das 8h as 20h.",
+                0.7,
+                DocumentPriority.Authoritative,
+                DocumentCategory.Hours)
+        };
+
+        var response = await _factory.CreateClient().SendAsync(ChatRequest("qual horario de atendimento telefonico"));
+        var events = await ReadEventsAsync(response);
+        var sourcesEvent = events.Single(e => e.GetProperty("type").GetString() == "sources");
+        var sourceIds = sourcesEvent
+            .GetProperty("sources")
+            .EnumerateArray()
+            .Select(s => s.GetProperty("documentId").GetString())
+            .ToList();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(bestMatchId.ToString(), sourceIds[0]);
+        Assert.Equal(secondaryMatchId.ToString(), sourceIds[1]);
+    }
+
+    [Fact]
     public async Task Chat_ConflitoEntreFontes_Recusa()
     {
         ResetFactory();

@@ -226,8 +226,10 @@ Ordem real de execução, com as referências no código:
 18. **Streaming para o cliente** — cada delta vira `ChatEvent(Delta)` → o controller
     serializa `{type:"delta", sessionId, text, sources, errorMessage}` (camelCase) +
     `\n` + `FlushAsync`.
-19. **Fontes** — após o stream, evento `sources` com os `ChatSourceDto` (excerto
-    truncado em 240 chars).
+19. **Fontes** — após o stream, `SourceCitationSelector` filtra os trechos por
+    correspondência lexical com a pergunta e ordena por relevância; o evento
+    `sources` só é emitido quando restar pelo menos uma fonte (excerto truncado
+    em 240 chars).
 20. **Persistência do turno** — `SaveTurnAsync`: `ChatSessionStore.AddTurn` (memória) +
     `ChatStore.AppendTurnAsync` (banco): cria `chat_sessions` (título = 1ª pergunta
     truncada em 200 chars) se não existir, atualiza `UpdatedAtUtc`, insere 2 linhas em
