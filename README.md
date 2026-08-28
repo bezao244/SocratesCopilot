@@ -1,4 +1,4 @@
-# Copiloto RAG da Empresa
+# Socrates Copilot
 
 Assistente de chat consultivo (RAG) 100% local, em português, que responde apenas com
 base em documentos aprovados pela própria empresa.
