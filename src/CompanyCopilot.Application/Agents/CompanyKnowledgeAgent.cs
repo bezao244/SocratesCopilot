@@ -197,7 +197,7 @@ public sealed class CompanyKnowledgeAgent : ICompanyKnowledgeAgent
                         h.Title,
                         h.Version,
                         h.Location,
-                        h.Excerpt.Length > 240 ? h.Excerpt[..240] + "…" : h.Excerpt))
+                        SourceCitationSelector.BuildDisplayExcerpt(request.Message, h.Excerpt, maxLength: 240)))
                     .ToList();
 
                 await writer.WriteAsync(

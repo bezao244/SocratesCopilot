@@ -228,8 +228,8 @@ Ordem real de execução, com as referências no código:
     `\n` + `FlushAsync`.
 19. **Fontes** — após o stream, `SourceCitationSelector` filtra os trechos por
     correspondência lexical com a pergunta e ordena por relevância; o evento
-    `sources` só é emitido quando restar pelo menos uma fonte (excerto truncado
-    em 240 chars).
+    `sources` só é emitido quando restar pelo menos uma fonte (excerto recortado
+    com foco nos termos da pergunta, até 240 chars).
 20. **Persistência do turno** — `SaveTurnAsync`: `ChatSessionStore.AddTurn` (memória) +
     `ChatStore.AppendTurnAsync` (banco): cria `chat_sessions` (título = 1ª pergunta
     truncada em 200 chars) se não existir, atualiza `UpdatedAtUtc`, insere 2 linhas em

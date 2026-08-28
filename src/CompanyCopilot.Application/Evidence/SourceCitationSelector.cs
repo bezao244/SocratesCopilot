@@ -50,6 +50,36 @@ public static class SourceCitationSelector
             .ToList();
     }
 
+    public static string BuildDisplayExcerpt(string question, string excerpt, int maxLength = 240)
+    {
+        if (string.IsNullOrWhiteSpace(excerpt) || maxLength <= 0)
+        {
+            return string.Empty;
+        }
+
+        if (excerpt.Length <= maxLength)
+        {
+            return excerpt;
+        }
+
+        var questionTokens = TokenizeKeywords(question);
+        if (questionTokens.Count == 0)
+        {
+            return TruncateWithEllipsis(excerpt, start: 0, maxLength);
+        }
+
+        var normalizedExcerpt = RemoveDiacritics(excerpt.ToLowerInvariant());
+        var bestMatchIndex = FindBestTokenMatchIndex(questionTokens, normalizedExcerpt);
+        if (bestMatchIndex < 0)
+        {
+            return TruncateWithEllipsis(excerpt, start: 0, maxLength);
+        }
+
+        var start = Math.Max(0, bestMatchIndex - (maxLength / 3));
+        start = MoveToWordStart(excerpt, start);
+        return TruncateWithEllipsis(excerpt, start, maxLength);
+    }
+
     private static double ComputeRelevance(IReadOnlyList<string> questionTokens, SearchHit hit)
     {
         var metadataTokens = TokenizeKeywords($"{hit.Title} {hit.Location}");
@@ -77,6 +107,67 @@ public static class SourceCitationSelector
 
         var matches = questionTokens.Count(candidates.Contains);
         return (double)matches / questionTokens.Count;
+    }
+
+    private static int FindBestTokenMatchIndex(
+        IReadOnlyList<string> questionTokens,
+        string normalizedExcerpt)
+    {
+        var bestIndex = -1;
+        var bestTokenLength = -1;
+
+        foreach (var token in questionTokens)
+        {
+            var index = normalizedExcerpt.IndexOf(token, StringComparison.Ordinal);
+            if (index < 0)
+            {
+                continue;
+            }
+
+            if (token.Length > bestTokenLength
+                || token.Length == bestTokenLength && (bestIndex < 0 || index < bestIndex))
+            {
+                bestTokenLength = token.Length;
+                bestIndex = index;
+            }
+        }
+
+        return bestIndex;
+    }
+
+    private static int MoveToWordStart(string excerpt, int start)
+    {
+        var clamped = Math.Clamp(start, 0, excerpt.Length);
+        while (clamped > 0 && !char.IsWhiteSpace(excerpt[clamped - 1]))
+        {
+            clamped--;
+        }
+
+        return clamped;
+    }
+
+    private static string TruncateWithEllipsis(string text, int start, int maxLength)
+    {
+        if (text.Length == 0 || maxLength <= 0)
+        {
+            return string.Empty;
+        }
+
+        var safeStart = Math.Clamp(start, 0, text.Length - 1);
+        var length = Math.Min(maxLength, text.Length - safeStart);
+        var snippet = text.Substring(safeStart, length).Trim();
+
+        if (safeStart > 0)
+        {
+            snippet = "…" + snippet;
+        }
+
+        if (safeStart + length < text.Length)
+        {
+            snippet += "…";
+        }
+
+        return snippet;
     }
 
     private static List<string> TokenizeKeywords(string text)

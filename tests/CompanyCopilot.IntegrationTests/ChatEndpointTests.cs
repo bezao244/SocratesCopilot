@@ -296,6 +296,39 @@ public sealed class ChatEndpointTests : IClassFixture<ChatApiFactory>
     }
 
     [Fact]
+    public async Task Chat_Fontes_ExibeTrechoMaisProximoDaPergunta()
+    {
+        ResetFactory();
+        var prefix = string.Join(' ', Enumerable.Repeat("regras de emprestimo e uso do acervo institucional", 30));
+        _factory.Hits = new[]
+        {
+            new SearchHit(
+                Guid.NewGuid(),
+                "Manual do Professor",
+                "1.0",
+                "pagina 35",
+                $"{prefix} O prazo para trancar a matricula e definido no calendario academico da instituicao.",
+                0.95,
+                DocumentPriority.Authoritative,
+                DocumentCategory.Policy)
+        };
+
+        var response = await _factory.CreateClient().SendAsync(ChatRequest("qual o prazo para trancar a matricula"));
+        var events = await ReadEventsAsync(response);
+        var sourcesEvent = events.Single(e => e.GetProperty("type").GetString() == "sources");
+        var excerpt = sourcesEvent
+            .GetProperty("sources")
+            .EnumerateArray()
+            .Single()
+            .GetProperty("excerpt")
+            .GetString();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.NotNull(excerpt);
+        Assert.Contains("trancar a matricula", excerpt!, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public async Task Chat_ConflitoEntreFontes_Recusa()
     {
         ResetFactory();

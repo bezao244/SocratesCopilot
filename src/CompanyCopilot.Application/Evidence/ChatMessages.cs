@@ -7,8 +7,8 @@ namespace CompanyCopilot.Application.Evidence;
 public static class ChatMessages
 {
     public const string NoEvidenceRefusal =
-        "Não encontrei informações confiáveis nas fontes aprovadas para responder a essa pergunta. " +
-        "Para uma orientação personalizada, procure o atendimento humano da Empresa.";
+        "Não encontrei informações suficientes na minha base para responder essa pergunta com segurança. " +
+        "Para não te passar uma informação incorreta, recomendo falar com o atendimento humano da Empresa.";
 
     public const string ConflictRefusal =
         "Encontrei informações conflitantes entre as fontes aprovadas e não posso dar uma resposta confiável. " +
