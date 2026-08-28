@@ -41,7 +41,7 @@ public sealed class KnowledgeSearchService : IKnowledgeSearch
         var vectorHits = await VectorSearchAsync(searchable, request.QuestionEmbedding, cancellationToken);
         var textHits = await TextSearchAsync(searchable, request.QuestionText, cancellationToken);
 
-        return Fuse(vectorHits, textHits);
+        return Fuse(vectorHits, textHits, _options.RrfK);
     }
 
     private Task<List<SearchHit>> VectorSearchAsync(
@@ -84,14 +84,15 @@ public sealed class KnowledgeSearchService : IKnowledgeSearch
                 c.Document.Category))
             .ToListAsync(cancellationToken);
 
-    private IReadOnlyList<SearchHit> Fuse(
+    internal static IReadOnlyList<SearchHit> Fuse(
         IReadOnlyList<SearchHit> vectorHits,
-        IReadOnlyList<SearchHit> textHits)
+        IReadOnlyList<SearchHit> textHits,
+        double rrfK)
     {
-        var scores = new Dictionary<(Guid DocumentId, string Location), (SearchHit Hit, double Score)>();
+        var scores = new Dictionary<(Guid DocumentId, string Location, string Excerpt), (SearchHit Hit, double Score)>();
 
-        AddRanked(vectorHits, scores);
-        AddRanked(textHits, scores);
+        AddRanked(vectorHits, scores, rrfK);
+        AddRanked(textHits, scores, rrfK);
 
         return scores.Values
             .OrderByDescending(x => x.Score)
@@ -100,14 +101,15 @@ public sealed class KnowledgeSearchService : IKnowledgeSearch
             .ToList();
     }
 
-    private void AddRanked(
+    private static void AddRanked(
         IReadOnlyList<SearchHit> hits,
-        IDictionary<(Guid DocumentId, string Location), (SearchHit Hit, double Score)> scores)
+        IDictionary<(Guid DocumentId, string Location, string Excerpt), (SearchHit Hit, double Score)> scores,
+        double rrfK)
     {
         for (var i = 0; i < hits.Count; i++)
         {
-            var key = (hits[i].DocumentId, hits[i].Location);
-            var contribution = 1.0 / (_options.RrfK + i + 1);
+            var key = (hits[i].DocumentId, hits[i].Location, hits[i].Excerpt);
+            var contribution = 1.0 / (rrfK + i + 1);
 
             if (scores.TryGetValue(key, out var existing))
             {

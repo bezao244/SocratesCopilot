@@ -50,8 +50,8 @@ public static class PromptBuilder
         builder.AppendLine(
             "Responda em português do Brasil usando exclusivamente o contexto acima, de forma direta e concisa, " +
             "sem citar fontes, nomes de documentos ou identificadores. " +
-            "Se o contexto não sustentar a resposta, diga que não encontrou uma informação confiável " +
-            "e indique o atendimento humano. Você é somente consultivo: não executa operações, " +
+            "Se o contexto não sustentar a resposta, diga que não encontrou informações suficientes " +
+            "na base para responder com segurança e recomende o atendimento humano. Você é somente consultivo: não executa operações, " +
             "cálculos financeiros ou alterações em sistemas.");
 
         return builder.ToString();

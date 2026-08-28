@@ -101,4 +101,33 @@ public class SourceCitationSelectorTests
 
         Assert.Equal(2, selected.Count);
     }
+
+    [Fact]
+    public void BuildDisplayExcerpt_RecortaAoRedorDoMelhorMatchDaPergunta()
+    {
+        var prefix = string.Join(' ', Enumerable.Repeat("regra de emprestimo do acervo institucional", 20));
+        var excerpt = $"{prefix} O prazo para trancar a matricula segue o calendario academico vigente.";
+
+        var display = SourceCitationSelector.BuildDisplayExcerpt(
+            "qual o prazo para trancar a matricula",
+            excerpt,
+            maxLength: 140);
+
+        Assert.Contains("trancar a matricula", display, StringComparison.OrdinalIgnoreCase);
+        Assert.StartsWith("…", display);
+    }
+
+    [Fact]
+    public void BuildDisplayExcerpt_SemMatchMantemRecorteInicial()
+    {
+        var excerpt = string.Join(' ', Enumerable.Repeat("texto introdutorio sem relacao com a pergunta", 20));
+
+        var display = SourceCitationSelector.BuildDisplayExcerpt(
+            "assunto inexistente nas fontes",
+            excerpt,
+            maxLength: 90);
+
+        Assert.StartsWith("texto introdutorio", display, StringComparison.OrdinalIgnoreCase);
+        Assert.EndsWith("…", display);
+    }
 }
